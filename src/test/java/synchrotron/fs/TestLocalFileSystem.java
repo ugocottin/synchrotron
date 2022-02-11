@@ -27,4 +27,20 @@ public class TestLocalFileSystem {
 	void testGetRoot() {
 		assertEquals(fileSystem.getRoot(), this.rootPath);
 	}
+
+	@Test
+	void testGetParentRelative() {
+		assertEquals(this.fileSystem.getParent("file.txt"), this.rootPath);
+		assertEquals(this.fileSystem.getParent("/"), this.rootPath);
+		assertEquals(this.fileSystem.getParent("/.hiddenFile"), this.rootPath);
+		assertEquals(this.fileSystem.getParent(""), this.rootPath);
+	}
+
+	@Test
+	void testGetParentAbsolute() {
+		assertEquals(this.fileSystem.getParent(this.rootPath + "/file.txt"), this.rootPath);
+		assertEquals(this.fileSystem.getParent(this.rootPath + "/"), "/home/john");
+		assertEquals(this.fileSystem.getParent(this.rootPath + "/.hiddenFile"), this.rootPath);
+		assertEquals(this.fileSystem.getParent(this.rootPath + ""), "/home/john");
+	}
 }

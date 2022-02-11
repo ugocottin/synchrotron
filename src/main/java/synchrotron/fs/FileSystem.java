@@ -7,6 +7,11 @@ public interface FileSystem {
 
 	public String getRoot();
 
+	/**
+	 * Retourne le chemin absolu du parent du chemin passé en paramètre.
+	 * @param path un chemin absolu ou local.
+	 * @return le parent du chemin
+	 */
 	public String getParent(String path);
 
 	public List<String> getChildren(String path);

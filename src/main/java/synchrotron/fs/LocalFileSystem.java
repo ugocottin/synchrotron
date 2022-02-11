@@ -9,21 +9,34 @@ public class LocalFileSystem implements FileSystem {
 
 	private final String root;
 
+	/**
+	 * Instancie un système de fichier local dont la racine est passée en argument
+	 * @param root Chemin vers la racine du système de fichier
+	 * @implNote la racine est virtuelle, on peut définir la racine comme un répertoire,
+	 qui agira comme une limite dans la hiérarchie du système.
+	 */
 	public LocalFileSystem(String root) {
 		this.root = root;
 	}
 
+	/**
+	 * @return la racine du système de fichier
+	 */
 	@Override
 	public String getRoot() {
 		return this.root;
 	}
 
 	@Override
-	public String getParent(String path) {
-        if(Paths.get(path).isAbsolute()){
-			return Paths.get(path).getParent().toString();
+	public String getParent(String pathString) {
+		Path path = Paths.get(pathString);
+        if(!path.isAbsolute()) {
+	        path = Paths.get(getAbsolutePath(path.toString()));
 		}
-		return getAbsolutePath(Paths.get(path).getParent().toString());
+		Path parentPath = path.getParent();
+
+		if (parentPath == null) return this.root;
+		return parentPath.toString();
 	}
 
 	@Override
