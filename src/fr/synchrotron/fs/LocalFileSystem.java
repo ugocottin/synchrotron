@@ -52,7 +52,7 @@ public class LocalFileSystem implements FileSystem {
 
 	@Override
 	public FileSystem getReference() {
-		return null;
+		return this;
 	}
 
 	@Override
