@@ -1,4 +1,4 @@
-package fr.synchrotron.fs;
+package main.synchrotron.fs;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -54,11 +54,6 @@ public class LocalFileSystem implements FileSystem {
 	@Override
 	public void replace(String absolutePathTargetFS, FileSystem fsSource, String absolutePathSourceFS) {
 
-	}
-
-	@Override
-	public FileSystem getReference() {
-		return this;
 	}
 
 	@Override

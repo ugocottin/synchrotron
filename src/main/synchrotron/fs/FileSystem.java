@@ -1,4 +1,4 @@
-package fr.synchrotron.fs;
+package main.synchrotron.fs;
 
 import java.io.File;
 import java.util.List;
@@ -18,8 +18,6 @@ public interface FileSystem {
 	public String getRelativePath(String absolutePath);
 
 	public void replace(String absolutePathTargetFS, FileSystem fsSource, String absolutePathSourceFS);
-
-	public FileSystem getReference();
 
 	public File createDirectory(String path);
 
