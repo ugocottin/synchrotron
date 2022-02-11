@@ -51,11 +51,6 @@ public class LocalFileSystem implements FileSystem {
 	}
 
 	@Override
-	public FileSystem getReference() {
-		return null;
-	}
-
-	@Override
 	public File createDirectory(String path) {
 		return null;
 	}
