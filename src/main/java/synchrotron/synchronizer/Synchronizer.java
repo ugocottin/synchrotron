@@ -1,7 +1,7 @@
-package main.synchrotron.synchronizer;
+package synchrotron.synchronizer;
 
 
-import main.synchrotron.fs.FileSystem;
+import synchrotron.fs.FileSystem;
 
 import java.util.List;
 

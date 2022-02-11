@@ -1,4 +1,4 @@
-package main.synchrotron.fs;
+package synchrotron.fs;
 
 import java.io.File;
 import java.nio.file.Path;
