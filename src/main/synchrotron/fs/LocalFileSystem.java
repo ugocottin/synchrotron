@@ -42,7 +42,10 @@ public class LocalFileSystem implements FileSystem {
 
 	@Override
 	public String getRelativePath(String absolutePath) {
-		return null;
+		final Path pathAbsolute = Paths.get(absolutePath);
+		final Path pathRoot = Paths.get(this.root);
+
+		return pathRoot.relativize(pathAbsolute).toString();
 	}
 
 	@Override
