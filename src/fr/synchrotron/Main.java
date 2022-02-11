@@ -3,6 +3,7 @@ package fr.synchrotron;
 public class Main {
 
     public static void main(String[] args) {
-	// write your code here
+	// if fichier1 != fichier2 then
+        // fichier1 = fichier2
     }
 }
