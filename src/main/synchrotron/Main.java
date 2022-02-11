@@ -1,7 +1,7 @@
-package fr.synchrotron;
+package main.synchrotron;
 
-import fr.synchrotron.fs.FileSystem;
-import fr.synchrotron.fs.LocalFileSystem;
+import main.synchrotron.fs.FileSystem;
+import main.synchrotron.fs.LocalFileSystem;
 
 public class Main {
 
