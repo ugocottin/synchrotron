@@ -20,7 +20,13 @@ public class LocalFileSystem implements FileSystem {
 
 	@Override
 	public String getParent(String path) {
-		return null;
+	    final String papath = getRelativePath(path);
+        System.out.println("papath :");
+        System.out.println(papath);
+
+        final Path parent = Paths.get(path).getParent();
+        return getAbsolutePath(parent.toString());
+
 	}
 
 	@Override

@@ -11,5 +11,6 @@ public class Main {
         final String absolutePath = fileSystem.getAbsolutePath(fileName);
 
         System.out.println(absolutePath);
+        System.out.println(fileSystem.getParent("bobo/toto.txt"));
     }
 }
