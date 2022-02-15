@@ -1,67 +1,84 @@
 package synchrotron.fs;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class LocalFileSystem implements FileSystem {
 
-	private final String root;
+	private final Path rootPath;
 
-	/**
-	 * Instancie un système de fichier local dont la racine est passée en argument
-	 * @param root Chemin vers la racine du système de fichier
-	 * @implNote la racine est virtuelle, on peut définir la racine comme un répertoire,
-	 qui agira comme une limite dans la hiérarchie du système.
-	 */
 	public LocalFileSystem(String root) {
-		this.root = root;
+		this.rootPath = Paths.get(root).normalize();
 	}
 
-	/**
-	 * @return la racine du système de fichier
-	 */
 	@Override
 	public String getRoot() {
-		return this.root;
+		return this.rootPath.toString();
 	}
 
-	@Override
-	public String getParent(String pathString) {
-		Path path = Paths.get(pathString);
+	private Path getRootPath() {
+		return this.rootPath;
+	}
+
+	@Override @Nullable
+	public String getParent(@NotNull String pathString) {
+		Path path = Paths.get(pathString).normalize();
         if(!path.isAbsolute()) {
-	        path = Paths.get(getAbsolutePath(path.toString()));
+	        path = Paths.get(getAbsolutePath(path.toString())).normalize();
 		}
+
+		if (path.equals(this.getRootPath())) return null;
 		Path parentPath = path.getParent();
 
-		if (parentPath == null) return this.root;
+		if (parentPath == null) return null;
 		return parentPath.toString();
 	}
 
 	@Override
-	public List<String> getChildren(String path) {
+	public @NotNull List<String> getChildren(@NotNull String pathString) {
 		return null;
 	}
 
 	@Override
-	public List<String> getAncestors(String path) {
-		return null;
+	public @NotNull List<String> getAncestors(@NotNull String pathString) {
+		final String absolutePath = this.getAbsolutePath(pathString);
+		Path path = Paths.get(absolutePath);
+
+		List<String> ancestors = new ArrayList<>();
+		final int ancestorsCount = path.getNameCount();
+		for(int ancestorIndex = 0; ancestorIndex < ancestorsCount; ancestorIndex++) {
+			ancestors.add(path.getName(ancestorIndex).toString());
+		}
+
+		return ancestors;
 	}
 
 	@Override
-	public String getAbsolutePath(String relativePath) {
-		final Path absolutePath = Paths.get(this.root, relativePath);
+	public @NotNull String getAbsolutePath(@NotNull String pathString) {
+		final Path path = Paths.get(pathString);
+		if (path.isAbsolute()) {
+			return path.toString();
+		}
+
+		final Path absolutePath = Paths.get(this.getRoot(), path.toString());
 
 		return absolutePath.toString();
 	}
 
 	@Override
-	public String getRelativePath(String absolutePath) {
-		final Path pathAbsolute = Paths.get(absolutePath);
-		final Path pathRoot = Paths.get(this.root);
+	public @NotNull String getRelativePath(@NotNull String pathString) {
+		final Path path = Paths.get(pathString);
+		if (!path.isAbsolute()) {
+			return path.toString();
+		}
 
-		return pathRoot.relativize(pathAbsolute).toString();
+		return this.getRootPath().relativize(path).toString();
 
 	}
 

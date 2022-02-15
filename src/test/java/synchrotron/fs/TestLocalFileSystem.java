@@ -6,6 +6,13 @@ import org.junit.jupiter.api.Test;
 
 import synchrotron.fs.FileSystem;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestLocalFileSystem {
@@ -24,6 +31,17 @@ public class TestLocalFileSystem {
 	}
 
 	@Test
+	void testAnything() {
+		String absolutePathString = "/somewhere/something/that.txt";
+		Path absolutePath = Paths.get(absolutePathString);
+		assertTrue(absolutePath.isAbsolute());
+
+		String relativePathString = "somewhere/something/that.txt";
+		Path relativePath = Paths.get(relativePathString);
+		assertFalse(relativePath.isAbsolute());
+	}
+
+	@Test
 	void testGetRoot() {
 		assertEquals(fileSystem.getRoot(), this.rootPath);
 	}
@@ -31,16 +49,25 @@ public class TestLocalFileSystem {
 	@Test
 	void testGetParentRelative() {
 		assertEquals(this.fileSystem.getParent("file.txt"), this.rootPath);
-		assertEquals(this.fileSystem.getParent("/"), this.rootPath);
-		assertEquals(this.fileSystem.getParent("/.hiddenFile"), this.rootPath);
-		assertEquals(this.fileSystem.getParent(""), this.rootPath);
+		assertEquals(this.fileSystem.getParent(Paths.get(".ssh", "id_rsa.pub").toString()), Paths.get(this.rootPath, ".ssh").toString());
+		assertNull(this.fileSystem.getParent(""));
 	}
 
 	@Test
 	void testGetParentAbsolute() {
 		assertEquals(this.fileSystem.getParent(this.rootPath + "/file.txt"), this.rootPath);
-		assertEquals(this.fileSystem.getParent(this.rootPath + "/"), "/home/john");
+		assertNull(this.fileSystem.getParent(Paths.get(this.rootPath, File.separator).toString()));
 		assertEquals(this.fileSystem.getParent(this.rootPath + "/.hiddenFile"), this.rootPath);
-		assertEquals(this.fileSystem.getParent(this.rootPath + ""), "/home/john");
+	}
+
+	@Test
+	void testGetAncestors() {
+		List<String> list = new ArrayList<>();
+		list.add("Users");
+		list.add("ugocottin");
+		list.add("Desktop");
+
+		System.out.println(list.stream().map(str -> "/" + str).collect(Collectors.joining()));
+		assertEquals(list, this.fileSystem.getAncestors("/Users/ugocottin/Desktop"));
 	}
 }

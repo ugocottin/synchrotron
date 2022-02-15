@@ -1,5 +1,8 @@
 package synchrotron.fs;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.util.List;
 
@@ -12,15 +15,37 @@ public interface FileSystem {
 	 * @param path un chemin absolu ou local.
 	 * @return le parent du chemin
 	 */
-	public String getParent(String path);
+	@Nullable
+	public String getParent(@NotNull String path);
 
-	public List<String> getChildren(String path);
 
-	public List<String> getAncestors(String path);
+	/**
+	 * @param path chemin vers un dossier
+	 * @return la liste des fichiers dans le dossier
+	 */
+	@NotNull
+	public List<String> getChildren(@NotNull String path);
 
-	public String getAbsolutePath(String relativePath);
+	/**
+	 * @param path chemin vers un fichier
+	 * @return la liste des composants du chemin vers le fichier
+	 */
+	@NotNull
+	public List<String> getAncestors(@NotNull String path);
 
-	public String getRelativePath(String absolutePath);
+	/**
+	 * @param relativePath un chemin
+	 * @return le chemin absolu dans le système de fichier de la machine
+	 */
+	@NotNull
+	public String getAbsolutePath(@NotNull String relativePath);
+
+	/**
+	 * @param absolutePath un chemin
+	 * @return le chemin relatif dans le système de ficher de la machine, par rapport à la racine
+	 */
+	@NotNull
+	public String getRelativePath(@NotNull String absolutePath);
 
 	public void replace(String absolutePathTargetFS, FileSystem fsSource, String absolutePathSourceFS);
 
