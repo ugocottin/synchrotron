@@ -23,7 +23,7 @@ public interface FileSystem {
 	 * @param path chemin vers un dossier
 	 * @return la liste des fichiers dans le dossier
 	 */
-	@NotNull
+	@Nullable
 	public List<String> getChildren(@NotNull String path);
 
 	/**

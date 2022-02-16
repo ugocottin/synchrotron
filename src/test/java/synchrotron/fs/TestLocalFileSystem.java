@@ -70,4 +70,9 @@ public class TestLocalFileSystem {
 		System.out.println(list.stream().map(str -> "/" + str).collect(Collectors.joining()));
 		assertEquals(list, this.fileSystem.getAncestors("/Users/ugocottin/Desktop"));
 	}
+
+	@Test
+	void testGetChildren() {
+		System.out.println(this.fileSystem.getChildren("/Users/ugocottin/Desktop"));
+	}
 }

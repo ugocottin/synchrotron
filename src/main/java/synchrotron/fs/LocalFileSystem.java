@@ -7,6 +7,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class LocalFileSystem implements FileSystem {
@@ -41,8 +42,15 @@ public class LocalFileSystem implements FileSystem {
 	}
 
 	@Override
-	public @NotNull List<String> getChildren(@NotNull String pathString) {
-		return null;
+	public @Nullable List<String> getChildren(@NotNull String pathString) {
+		final String absolutePathString = this.getAbsolutePath(pathString);
+		final Path path = Paths.get(absolutePathString);
+		final File file = path.toFile();
+		final String[] children = file.list();
+
+		if (children == null) return null;
+		
+		return Arrays.asList(children);
 	}
 
 	@Override
