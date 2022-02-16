@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class TestMain {
 
-	final String filePathString = "/Users/ugocottin/Desktop/projets/Ressources";
+	final String filePathString = "/Users/ugocottin/Desktop/projets/Ressource";
 	final Path filePath = Paths.get(filePathString);
 
 	@Test
