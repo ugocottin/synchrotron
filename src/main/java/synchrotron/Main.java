@@ -1,25 +1,42 @@
 package synchrotron;
 
-import synchrotron.fs.FileSystem;
-import synchrotron.fs.LocalFileSystem;
-import synchrotron.fs.UpdateDetector;
+import org.jetbrains.annotations.NotNull;
+import synchrotron.synchronizer.Repository;
+import synchrotron.synchronizer.RepositoryChange;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Map;
+import java.util.Set;
 
 public class Main {
 
+    public static final int timeout = 1_000;
+
     public static void main(String[] args) throws Exception {
-        File file = new File("/Users/ugocottin/Desktop/changes.patch");
-        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-        UpdateDetector updateDetector = new UpdateDetector(messageDigest);
-        System.out.println(updateDetector.getHash(file));
+        final MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+        Path rootPath = Paths.get("/", "Users", "ugocottin", "Public");
+        Repository repository = new Repository(rootPath, messageDigest);
 
-        final FileSystem fileSystem = new LocalFileSystem("C://Users/ugocottin/Desktop");
-        final String fileName = "cle/Capture.PNG";
-        final String absolutePath = fileSystem.getAbsolutePath(fileName);
+        while (true) {
+            repository = repository.getSnapshot();
+            Main.printChanges(repository);
+            Thread.sleep(Main.timeout);
+        }
+    }
 
-        System.out.println(absolutePath);
-        System.out.println(fileSystem.getParent(absolutePath));
+    private static void printChanges(@NotNull Repository repository) {
+        Map<File, RepositoryChange> changes = repository.getChanges();
+        Set<File> files = changes.keySet();
+
+        if (files.isEmpty()) { return; }
+
+        for (File file : files) {
+            RepositoryChange change = changes.get(file);
+            Path absolutePath = repository.getRootPath().resolve(file.toPath());
+            System.out.println(change + "\t" + absolutePath);
+        }
     }
 }

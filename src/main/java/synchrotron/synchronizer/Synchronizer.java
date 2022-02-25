@@ -10,68 +10,100 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Synchronizer {
 
-    private final Map<File, byte[]> filesHash = new HashMap<>();
+	@Nullable
+	private Map<File, byte[]> hashes;
 
-    public void synchronize(FileSystem fs1, FileSystem fs2) {
-        List<String> dirtyPaths1 = computeDirty(fs1, fs1, "");
-        List<String> dirtyPaths2 = computeDirty(fs2, fs2, "");
-        reconcile(fs1, dirtyPaths1, fs2, dirtyPaths2, "");
-    }
+	@NotNull
+	private final MessageDigest messageDigest;
 
-    public void reconcile(FileSystem fs1, List<String> dirtyPaths1, FileSystem fs2, List<String> dirtyPaths2, String currentRelativePath) {
+	public Synchronizer(@NotNull MessageDigest messageDigest) {
+		this.hashes = null;
+		this.messageDigest = messageDigest;
+	}
 
-    }
+	public void synchronize(@NotNull Path rootPath1, @NotNull Path rootPath2) {
+		Map<File, byte[]> firstDirHashes = this.computeHashes(rootPath1.toFile(), this.messageDigest);
+		Map<File, byte[]> secondDirHashes = this.computeHashes(rootPath2.toFile(), this.messageDigest);
+	}
 
-    public List<String> computeDirty(FileSystem lastSync, FileSystem fs, String currentRelativePath) {
-        return null;
-    }
+	private void reconcile(@NotNull Map<File, byte[]> firstDirHashes, @NotNull Map<File, byte[]> secondDirHashes) {
 
-    public void doSomething(@NotNull File file, @NotNull MessageDigest messageDigest) throws IOException {
-        this.computeHash(file, messageDigest);
-        this.printHashes();
-    }
+	}
 
-    private void printHashes() {
-        System.out.println("Showing files hashes for " + this.filesHash.size() + " entries:");
-        for (Map.Entry<File, byte[]> entry : this.filesHash.entrySet()) {
-            final File file = entry.getKey();
-            final byte[] hash = entry.getValue();
-            System.out.println(file.toString() + ": " + DatatypeConverter.printHexBinary(hash));
-        }
-    }
-    
-    private void computeHash(@NotNull File file, @NotNull MessageDigest messageDigest) throws IOException {
-        if (file.isFile()) {
-            final byte[] hash = getHash(file, messageDigest);
-            this.filesHash.put(file, hash);
-        } else {
-            @Nullable final File[] children = file.listFiles();
-            if (children == null) return;
+	public @NotNull List<File> computeDirty(@NotNull Path rootPath) {
+		final File rootFile = rootPath.toFile();
+		final Map<File, byte[]> computedHashes = this.computeHashes(rootFile, this.messageDigest);
+		final List<File> dirtyFiles = new ArrayList<>();
 
-            for (File child: children) {
-                if (child == null) continue;
-                computeHash(child, messageDigest);
-            }
-        }
-    }
+		if (this.hashes != null) {
+			for (Map.Entry<File, byte[]> entry : computedHashes.entrySet()) {
+				final File file = entry.getKey();
+				if (this.hashes.containsKey(file)) {
+					final byte[] currentHash = entry.getValue();
+					final byte[] previousHash = this.hashes.get(file);
 
-    private byte[] getHash(@NotNull File file, @NotNull MessageDigest messageDigest) throws IOException {
-        System.out.println("Get hash of file " + file);
-        try (InputStream inputStream = new FileInputStream(file); DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {
-            int readedBytes;
-            do {
-                readedBytes = digestInputStream.read();
-            } while (readedBytes != -1);
-        }
+					if (!Arrays.equals(currentHash, previousHash)) {
+						// DIRTY!
+						dirtyFiles.add(file);
+					}
+				}
+			}
+		}
 
-        return messageDigest.digest();
-    }
+		this.hashes = computedHashes;
+		return dirtyFiles;
+	}
+
+	public static void printHashes(@NotNull Map<File, byte[]> hashes) {
+		System.out.println("Showing files hashes for " + hashes.size() + " entries:");
+		for (Map.Entry<File, byte[]> entry : hashes.entrySet()) {
+			final File file = entry.getKey();
+			final byte[] hash = entry.getValue();
+			System.out.println(file.toString() + ": " + DatatypeConverter.printHexBinary(hash));
+		}
+	}
+
+	private @NotNull Map<File, byte[]> computeHashes(@NotNull File file, @NotNull MessageDigest messageDigest) {
+		Map<File, byte[]> hashes = new HashMap<>();
+		if (file.isFile()) {
+			try {
+				final byte[] hash = getHash(file, messageDigest);
+				hashes.put(file, hash);
+			} catch (IOException error) {
+				System.err.println("Error while compute hash of file " + file.getAbsolutePath() + ": " + error);
+			}
+
+		} else {
+			@Nullable final File[] children = file.listFiles();
+			if (children == null) return hashes;
+
+			for (File child: children) {
+				if (child == null) continue;
+				final Map<File, byte[]> subMap = computeHashes(child, messageDigest);
+				hashes.putAll(subMap);
+			}
+		}
+
+		return hashes;
+	}
+
+	private byte[] getHash(@NotNull File file, @NotNull MessageDigest messageDigest) throws IOException {
+		System.out.println("Get hash of file " + file);
+
+		try (InputStream inputStream = new FileInputStream(file); DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {
+			int readedBytes;
+			do {
+				readedBytes = digestInputStream.read();
+			} while (readedBytes != -1);
+		}
+
+		return messageDigest.digest();
+	}
 }
