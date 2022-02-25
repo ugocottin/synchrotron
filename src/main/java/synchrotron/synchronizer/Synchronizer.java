@@ -1,109 +1,98 @@
 package synchrotron.synchronizer;
 
-import synchrotron.fs.FileSystem;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.bind.DatatypeConverter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.*;
 
 public class Synchronizer {
 
-	@Nullable
-	private Map<File, byte[]> hashes;
-
 	@NotNull
 	private final MessageDigest messageDigest;
 
+	@Nullable
+	private SynchronizerThread backgroundThread;
+
 	public Synchronizer(@NotNull MessageDigest messageDigest) {
-		this.hashes = null;
 		this.messageDigest = messageDigest;
 	}
 
-	public void synchronize(@NotNull Path rootPath1, @NotNull Path rootPath2) {
-		Map<File, byte[]> firstDirHashes = this.computeHashes(rootPath1.toFile(), this.messageDigest);
-		Map<File, byte[]> secondDirHashes = this.computeHashes(rootPath2.toFile(), this.messageDigest);
+	public void synchronize(@NotNull Path firstPath, @NotNull Path secondPath) {
+
+		if (this.backgroundThread != null) {
+			System.err.println("An instance is already running");
+			return;
+		}
+
+		final Repository firstRepo = new Repository(firstPath, this.messageDigest);
+		final Repository secondRepo = new Repository(secondPath, this.messageDigest);
+
+		this.backgroundThread = new SynchronizerThread(this, firstRepo, secondRepo);
+		this.backgroundThread.start();
 	}
 
-	private void reconcile(@NotNull Map<File, byte[]> firstDirHashes, @NotNull Map<File, byte[]> secondDirHashes) {
-
+	public void stop() {
+		if (this.backgroundThread == null) { return; }
+		this.backgroundThread.doStop();
 	}
 
-	public @NotNull List<File> computeDirty(@NotNull Path rootPath) {
-		final File rootFile = rootPath.toFile();
-		final Map<File, byte[]> computedHashes = this.computeHashes(rootFile, this.messageDigest);
-		final List<File> dirtyFiles = new ArrayList<>();
+	public void waitAndExit() throws InterruptedException {
+		if (this.backgroundThread == null) { return; }
+		this.backgroundThread.join();
+	}
 
-		if (this.hashes != null) {
-			for (Map.Entry<File, byte[]> entry : computedHashes.entrySet()) {
-				final File file = entry.getKey();
-				if (this.hashes.containsKey(file)) {
-					final byte[] currentHash = entry.getValue();
-					final byte[] previousHash = this.hashes.get(file);
+	public void reconcile(@NotNull final Repository firstRepo, @NotNull final Repository secondRepo) {
+		try {
+			applyChanges(firstRepo.getChanges(), firstRepo, secondRepo);
+			applyChanges(secondRepo.getChanges(), secondRepo, firstRepo);
+		} catch (IOException ioException) {
+			System.err.println(ioException.getMessage());
+		}
+	}
 
-					if (!Arrays.equals(currentHash, previousHash)) {
-						// DIRTY!
-						dirtyFiles.add(file);
+	private void applyChanges(@NotNull final Map<File, RepositoryChange> changes, @NotNull final Repository fromRepository, @NotNull final Repository toRepository) throws IOException {
+		Set<File> files = changes.keySet();
+
+		for (File file : files) {
+			RepositoryChange change = changes.get(file);
+
+			File fromFile = this.getAbsoluteFileInRepository(file, fromRepository);
+			File toFile = this.getAbsoluteFileInRepository(file, toRepository);
+
+			boolean res;
+
+			switch (change) {
+				case CREATE:
+					res = toFile.createNewFile();
+					if (res) {
+						System.out.println("[CREATE]\t" + toFile.getAbsolutePath() + " created");
+						System.out.println("[COPY]  \t" + fromFile.getAbsolutePath() + " -> " + toFile.getAbsolutePath());
+						try (FileInputStream inputStream = new FileInputStream(fromFile); FileOutputStream outputStream = new FileOutputStream(toFile)) {
+							FileChannel inputChannel = inputStream.getChannel();
+							FileChannel outputChannel = outputStream.getChannel();
+
+							inputChannel.transferTo(0, inputChannel.size(), outputChannel);
+						}
 					}
-				}
+					break;
+				case UPDATE:
+					System.out.println("[UPDATE]\t" + fromFile.getAbsolutePath());
+					break;
+				case DELETE:
+					res = toFile.delete();
+					if (res) System.out.println("[DELETE]\t" + fromFile.getAbsolutePath() + " deleted");
+					break;
 			}
-		}
-
-		this.hashes = computedHashes;
-		return dirtyFiles;
-	}
-
-	public static void printHashes(@NotNull Map<File, byte[]> hashes) {
-		System.out.println("Showing files hashes for " + hashes.size() + " entries:");
-		for (Map.Entry<File, byte[]> entry : hashes.entrySet()) {
-			final File file = entry.getKey();
-			final byte[] hash = entry.getValue();
-			System.out.println(file.toString() + ": " + DatatypeConverter.printHexBinary(hash));
 		}
 	}
 
-	private @NotNull Map<File, byte[]> computeHashes(@NotNull File file, @NotNull MessageDigest messageDigest) {
-		Map<File, byte[]> hashes = new HashMap<>();
-		if (file.isFile()) {
-			try {
-				final byte[] hash = getHash(file, messageDigest);
-				hashes.put(file, hash);
-			} catch (IOException error) {
-				System.err.println("Error while compute hash of file " + file.getAbsolutePath() + ": " + error);
-			}
-
-		} else {
-			@Nullable final File[] children = file.listFiles();
-			if (children == null) return hashes;
-
-			for (File child: children) {
-				if (child == null) continue;
-				final Map<File, byte[]> subMap = computeHashes(child, messageDigest);
-				hashes.putAll(subMap);
-			}
-		}
-
-		return hashes;
-	}
-
-	private byte[] getHash(@NotNull File file, @NotNull MessageDigest messageDigest) throws IOException {
-		System.out.println("Get hash of file " + file);
-
-		try (InputStream inputStream = new FileInputStream(file); DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {
-			int readedBytes;
-			do {
-				readedBytes = digestInputStream.read();
-			} while (readedBytes != -1);
-		}
-
-		return messageDigest.digest();
+	private @NotNull File getAbsoluteFileInRepository(@NotNull File file, @NotNull Repository repository) {
+		Path relativePath = file.toPath();
+		Path absolutePath = repository.getRootPath().resolve(relativePath);
+		return absolutePath.toFile();
 	}
 }
