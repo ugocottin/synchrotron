@@ -31,16 +31,21 @@ public class SynchronizerThread extends Thread {
 	@Override
 	public void run() {
 		try {
+			this.firstRepo = this.firstRepo.getSnapshot();
+			this.secondRepo = this.secondRepo.getSnapshot();
+			this.synchronizer.init(this.firstRepo, this.secondRepo);
+
 			while (this.keepRunning()) {
 				// Work
-				firstRepo = firstRepo.getSnapshot();
-				secondRepo = secondRepo.getSnapshot();
+				this.firstRepo = this.firstRepo.getSnapshot();
+				this.secondRepo = this.secondRepo.getSnapshot();
 
-				this.synchronizer.reconcile(firstRepo, secondRepo);
+				this.synchronizer.reconcile(this.firstRepo, this.secondRepo);
 
 				//noinspection BusyWait
 				Thread.sleep(this.interval);
 			}
+			System.out.println("Stopping the background thread");
 		} catch (InterruptedException interruptedException) {
 			System.err.println(interruptedException.getMessage());
 		} finally {

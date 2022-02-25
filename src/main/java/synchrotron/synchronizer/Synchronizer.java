@@ -40,9 +40,38 @@ public class Synchronizer {
 		this.backgroundThread.doStop();
 	}
 
-	public void waitAndExit() throws InterruptedException {
+	public void waitForExit() throws InterruptedException {
 		if (this.backgroundThread == null) { return; }
 		this.backgroundThread.join();
+	}
+
+	public void init(@NotNull final Repository firstRepo, @NotNull final Repository secondRepo) {
+		Map<File, RepositoryChange> firstRepoChanges = firstRepo.getChanges(secondRepo);
+		Map<File, RepositoryChange> secondRepoChanges = secondRepo.getChanges(firstRepo);
+
+		Map<File, RepositoryChange> initFirstRepoChanges = new HashMap<>();
+		Map<File, RepositoryChange> initSecondRepoChanges = new HashMap<>();
+
+		for (File file : firstRepoChanges.keySet()) {
+			RepositoryChange change = firstRepoChanges.get(file);
+			if (change != RepositoryChange.DELETE) {
+				initFirstRepoChanges.put(file, change);
+			}
+		}
+
+		for (File file : secondRepoChanges.keySet()) {
+			RepositoryChange change = secondRepoChanges.get(file);
+			if (change != RepositoryChange.DELETE) {
+				initSecondRepoChanges.put(file, change);
+			}
+		}
+
+		try {
+			applyChanges(initFirstRepoChanges, firstRepo, secondRepo);
+			applyChanges(initSecondRepoChanges, secondRepo, firstRepo);
+		} catch (IOException ioException) {
+			System.err.println(ioException.getMessage());
+		}
 	}
 
 	public void reconcile(@NotNull final Repository firstRepo, @NotNull final Repository secondRepo) {

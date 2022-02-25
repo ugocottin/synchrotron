@@ -57,13 +57,18 @@ public class Repository {
 
 	@NotNull
 	public Map<File, RepositoryChange> getChanges() {
+		return this.getChanges(this.previousSnapshot);
+	}
+
+	@NotNull
+	public Map<File, RepositoryChange> getChanges(@Nullable Repository otherRepository) {
 
 		final Map<File, RepositoryChange> changes = new HashMap<>();
 
-		if (this.hashes == null || this.previousSnapshot == null || this.previousSnapshot.hashes == null) { return changes; }
+		if (this.hashes == null || otherRepository == null || otherRepository.hashes == null) { return changes; }
 
 		final Map<File, byte[]> hashes = this.hashes;
-		final Map<File, byte[]> previousHashes = this.previousSnapshot.hashes;
+		final Map<File, byte[]> previousHashes = otherRepository.hashes;
 
 		Set<File> filesSet = new HashSet<>(hashes.keySet());
 		filesSet.addAll(previousHashes.keySet());
