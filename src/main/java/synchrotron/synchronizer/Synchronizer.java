@@ -67,6 +67,14 @@ public class Synchronizer {
 
 			switch (change) {
 				case CREATE:
+					File parentFile = toFile.getParentFile();
+					if (parentFile != null) {
+						res = parentFile.mkdirs();
+						if (res) {
+							System.out.println("[CREATE]\t" + parentFile.getAbsolutePath() + " created");
+						}
+					}
+
 					res = toFile.createNewFile();
 					if (res) {
 						System.out.println("[CREATE]\t" + toFile.getAbsolutePath() + " created");
