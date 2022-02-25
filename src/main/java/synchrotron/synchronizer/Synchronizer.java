@@ -1,9 +1,9 @@
 package synchrotron.synchronizer;
 
+import synchrotron.fs.FileSystem;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import synchrotron.fs.FileSystem;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.File;

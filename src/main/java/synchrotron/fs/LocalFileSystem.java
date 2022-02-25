@@ -3,6 +3,8 @@ package synchrotron.fs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import synchrotron.fs.FileSystem;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;

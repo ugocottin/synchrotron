@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/synchrotron.iml" filepath="$PROJECT_DIR$/synchrotron.iml" />
       <module fileurl="file://$PROJECT_DIR$/src/main/synchrotron.main.iml" filepath="$PROJECT_DIR$/src/main/synchrotron.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/src/test/synchrotron.test.iml" filepath="$PROJECT_DIR$/src/test/synchrotron.test.iml" />
     </modules>

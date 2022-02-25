@@ -5,10 +5,8 @@ import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
