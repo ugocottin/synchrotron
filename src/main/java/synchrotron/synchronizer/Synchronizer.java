@@ -76,8 +76,11 @@ public class Synchronizer {
 
 	public void reconcile(@NotNull final Repository firstRepo, @NotNull final Repository secondRepo) {
 		try {
-			applyChanges(firstRepo.getChanges(), firstRepo, secondRepo);
-			applyChanges(secondRepo.getChanges(), secondRepo, firstRepo);
+			Map<File, RepositoryChange> firstRepoChanges = firstRepo.getChanges();
+			Map<File, RepositoryChange> secondRepoChanges = secondRepo.getChanges();
+
+			if (firstRepoChanges.size() > 0) applyChanges(firstRepoChanges, firstRepo, secondRepo);
+			if (secondRepoChanges.size() > 0) applyChanges(secondRepoChanges, secondRepo, firstRepo);
 		} catch (IOException ioException) {
 			System.err.println(ioException.getMessage());
 		}
@@ -87,6 +90,9 @@ public class Synchronizer {
 		Set<File> files = changes.keySet();
 
 		for (File file : files) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException ignored) { }
 			RepositoryChange change = changes.get(file);
 
 			File fromFile = this.getAbsoluteFileInRepository(file, fromRepository);
@@ -104,6 +110,11 @@ public class Synchronizer {
 						}
 					}
 
+					if (fromFile.isDirectory()) {
+						toFile.mkdir();
+						continue;
+					}
+
 					res = toFile.createNewFile();
 					if (res) {
 						System.out.println("[CREATE]\t" + toFile.getAbsolutePath() + " created");
@@ -118,10 +129,25 @@ public class Synchronizer {
 					break;
 				case UPDATE:
 					System.out.println("[UPDATE]\t" + fromFile.getAbsolutePath());
+					try (FileInputStream inputStream = new FileInputStream(fromFile); FileOutputStream outputStream = new FileOutputStream(toFile)) {
+						FileChannel inputChannel = inputStream.getChannel();
+						FileChannel outputChannel = outputStream.getChannel();
+
+						inputChannel.transferTo(0, inputChannel.size(), outputChannel);
+					}
 					break;
 				case DELETE:
-					res = toFile.delete();
-					if (res) System.out.println("[DELETE]\t" + fromFile.getAbsolutePath() + " deleted");
+
+					if (toFile.isDirectory()) {
+						this.deleteDirectory(toFile);
+						continue;
+					}
+
+					if (toFile.exists()) {
+						res = toFile.delete();
+						if (res) System.out.println("[DELETE]\t" + fromFile.getAbsolutePath() + " deleted");
+					}
+
 					break;
 			}
 		}
@@ -131,5 +157,23 @@ public class Synchronizer {
 		Path relativePath = file.toPath();
 		Path absolutePath = repository.getRootPath().resolve(relativePath);
 		return absolutePath.toFile();
+	}
+
+	private void deleteDirectory(@NotNull File directory) {
+		if (!directory.exists()) {
+			return;
+		}
+
+		if (directory.isDirectory()) {
+			@Nullable File[] children = directory.listFiles();
+
+			if (children == null) { return; }
+
+			for (File child : children) {
+				if (child != null) deleteDirectory(child);
+			}
+		}
+
+		directory.delete();
 	}
 }

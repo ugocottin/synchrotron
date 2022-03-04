@@ -125,19 +125,22 @@ public class Repository {
 
 		for (File file : filesSet) {
 
+			if (file.getName().equals(".DS_Store")) {
+				continue;
+			}
 			// Get relative file path
-			final Path filePath = file.toPath();
-			final Path relativeFilePath = this.rootPath.relativize(filePath);
-			final File relativeFile = relativeFilePath.toFile();
+			//final Path filePath = file.toPath();
+			//final Path relativeFilePath = this.rootPath.relativize(filePath);
+			//final File relativeFile = relativeFilePath.toFile();
 
 			if (previousHashes.containsKey(file) && !hashes.containsKey(file)) {
 				// Deleted
-				changes.put(relativeFile, RepositoryChange.DELETE);
+				changes.put(file, RepositoryChange.DELETE);
 			}
 
 			if (!previousHashes.containsKey(file) && hashes.containsKey(file)) {
 				// Created
-				changes.put(relativeFile, RepositoryChange.CREATE);
+				changes.put(file, RepositoryChange.CREATE);
 			}
 
 			if (previousHashes.containsKey(file) && hashes.containsKey(file)) {
@@ -147,7 +150,7 @@ public class Repository {
 
 				if (!Arrays.equals(previousHash, hash)) {
 					// Modified
-					changes.put(relativeFile, RepositoryChange.UPDATE);
+					changes.put(file, RepositoryChange.UPDATE);
 				}
 			}
 
@@ -165,6 +168,11 @@ public class Repository {
 	@NotNull
 	private Map<File, byte[]> getHashes(@NotNull File file, @NotNull MessageDigest messageDigest) {
 		Map<File, byte[]> hashes = new HashMap<>();
+
+		final Path filePath = file.toPath();
+		final Path relativeFilePath = this.rootPath.relativize(filePath);
+		final File relativeFile = relativeFilePath.toFile();
+
 		if (file.isFile()) {
 
 			// Ensure that we can read the file
@@ -176,12 +184,15 @@ public class Repository {
 			try {
 				// Compute hash
 				final byte[] hash = getHash(file, messageDigest);
-				hashes.put(file, hash);
+				hashes.put(relativeFile, hash);
 			} catch (IOException error) {
 				System.err.println("Error while compute hash of file " + file.getAbsolutePath() + ": " + error);
 			}
 
 		} else {
+			byte[] directoryDummyHash = new byte[]{0};
+			hashes.put(relativeFile, directoryDummyHash);
+
 			// If the file is a directory, list all children
 			final File[] children = file.listFiles();
 			if (children == null) return hashes;
