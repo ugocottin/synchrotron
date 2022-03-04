@@ -21,7 +21,7 @@ public class Synchronizer {
 		this.messageDigest = messageDigest;
 	}
 
-	public void synchronize(@NotNull Path firstPath, @NotNull Path secondPath) {
+	public void synchronize(@NotNull Path firstPath, @NotNull Path secondPath, int timer) {
 
 		if (this.backgroundThread != null) {
 			System.err.println("An instance is already running");
@@ -31,7 +31,7 @@ public class Synchronizer {
 		final Repository firstRepo = new Repository(firstPath, this.messageDigest);
 		final Repository secondRepo = new Repository(secondPath, this.messageDigest);
 
-		this.backgroundThread = new SynchronizerThread(this, firstRepo, secondRepo);
+		this.backgroundThread = new SynchronizerThread(this, firstRepo, secondRepo, timer);
 		this.backgroundThread.start();
 	}
 
