@@ -55,8 +55,6 @@ public class Main {
         }
         System.out.println("Path1 : "+param1+", Path2 : "+param2+", timer : "+timerValue );
 
-        //Path firstPath = Paths.get("C:/", "tmp", "public");
-        //Path secondPath = Paths.get("C:/", "tmp", "public_copy");
         Path firstPath = Paths.get(param1);
         Path secondPath = Paths.get(param2);
         if(!firstPath.toFile().exists() || !firstPath.toFile().isDirectory()){
